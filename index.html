@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Sensory Nature Walk</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #5C8F65;
+    --accent-light: #E8F4EA;
+    --accent-dark: #1E4D25;
+    --transition-dur: 0.4s;
+  }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(145deg, #f2f8f2 0%, #e4f0e5 100%);
+    color: #1a1a1a;
+    transition: background var(--transition-dur) ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* ── Rotate overlay ──────────────────────────────── */
+  #rotate-overlay {
+    display: none; position: fixed; inset: 0; z-index: 999;
+    background: #1a1a1a; color: #fff;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 20px; text-align: center; padding: 2rem;
+  }
+  .rotate-icon { font-size: 52px; animation: rotate-hint 1.8s ease-in-out infinite; }
+  @keyframes rotate-hint {
+    0%, 100% { transform: rotate(0deg); }
+    40%, 60%  { transform: rotate(90deg); }
+  }
+  #rotate-overlay p { font-size: 15px; opacity: 0.75; line-height: 1.6; }
+  @media (orientation: portrait) { #rotate-overlay { display: flex; } }
+
+  /* ── App ─────────────────────────────────────────── */
+  #app { width: 100%; height: 100%; position: relative; }
+
+  /* ── Screens ─────────────────────────────────────── */
+  .screen {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: env(safe-area-inset-top,0) env(safe-area-inset-right,16px)
+             env(safe-area-inset-bottom,0) env(safe-area-inset-left,16px);
+    opacity: 0; pointer-events: none;
+    position: absolute; inset: 0;
+    transition: opacity var(--transition-dur) ease;
+  }
+  .screen.active { opacity: 1; pointer-events: all; position: relative; }
+
+  /* ── Intro ───────────────────────────────────────── */
+  .intro-layout {
+    display: flex; align-items: center;
+    gap: clamp(2rem,6vw,5rem);
+    padding: 0 clamp(1rem,4vw,3rem);
+    max-width: 780px; width: 100%;
+  }
+  .orb {
+    width: clamp(72px,14vw,100px);
+    height: clamp(72px,14vw,100px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #84B888, #5C8F65);
+    flex-shrink: 0;
+    animation: breathe 4s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(92,143,101,0.4);
+  }
+  @keyframes breathe {
+    0%,100% { transform: scale(1);    box-shadow: 0 0 0  0px rgba(92,143,101,0.3); }
+    50%      { transform: scale(1.16); box-shadow: 0 0 0 20px rgba(92,143,101,0); }
+  }
+  .intro-text { flex: 1; }
+  .intro-title {
+    font-size: clamp(18px,3.5vw,26px);
+    font-weight: 700; letter-spacing: -0.4px; margin-bottom: 0.6rem;
+  }
+  .intro-body {
+    font-size: clamp(12px,1.8vw,14px);
+    color: #555; line-height: 1.75; margin-bottom: 1.5rem;
+  }
+
+  /* ── Walk screen — two-column ────────────────────── */
+  .walk-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(1.5rem,4vw,3rem);
+    padding: clamp(0.75rem,2vh,1.5rem) clamp(1rem,4vw,3rem);
+    max-width: 900px; width: 100%; height: 100%;
+    align-items: stretch;
+  }
+
+  /* Left: step info */
+  .walk-left {
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding-top: clamp(0.5rem,2vh,1.5rem);
+    padding-bottom: clamp(0.5rem,2vh,1.5rem);
+  }
+  .step-pips {
+    display: flex; gap: 5px; margin-bottom: clamp(1rem,2.5vh,1.75rem);
+  }
+  .pip {
+    height: 4px; border-radius: 999px;
+    background: rgba(0,0,0,0.1);
+    transition: background 0.3s, flex 0.3s;
+    flex: 1; max-width: 32px;
+  }
+  .pip.done    { background: #5C8F65; }
+  .pip.current { background: #5C8F65; flex: 2.5; max-width: 60px; }
+
+  .sense-eyebrow {
+    font-size: clamp(10px,1.4vw,12px);
+    font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #5C8F65;
+    margin-bottom: clamp(0.5rem,1.5vh,0.75rem);
+    min-height: 1.2em;
+    transition: opacity 0.25s;
+  }
+  .step-question {
+    font-size: clamp(16px,3vw,24px);
+    font-weight: 700; line-height: 1.3;
+    letter-spacing: -0.3px; color: #1a1a1a;
+    margin-bottom: clamp(0.75rem,2vh,1.25rem);
+    min-height: 2.6em;
+    transition: opacity 0.25s;
+  }
+  .step-nudge {
+    font-size: clamp(11px,1.6vw,13px);
+    color: #666; line-height: 1.65; font-style: italic;
+    transition: opacity 0.25s;
+  }
+  .step-counter {
+    font-size: 12px; color: #aaa;
+    margin-top: clamp(0.75rem,2vh,1.25rem);
+  }
+
+  /* Right: notes + nav */
+  .walk-right {
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    padding-top: clamp(0.5rem,2vh,1.5rem);
+    padding-bottom: clamp(0.5rem,2vh,1.5rem);
+  }
+  .note-label {
+    font-size: clamp(10px,1.4vw,12px);
+    font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #888;
+    margin-bottom: 8px;
+  }
+  textarea {
+    flex: 1;
+    width: 100%;
+    font-size: clamp(12px,1.7vw,14px);
+    font-family: inherit;
+    color: #1a1a1a;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    resize: none;
+    outline: none;
+    line-height: 1.65;
+    transition: border-color 0.15s, background 0.15s;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    min-height: 0;
+  }
+  textarea:focus { border-color: #5C8F65; background: rgba(255,255,255,0.95); }
+  textarea::placeholder { color: #bbb; }
+
+  .nav-row {
+    display: flex; align-items: center;
+    justify-content: flex-end; gap: 8px;
+    margin-top: clamp(0.6rem,1.5vh,1rem);
+  }
+
+  /* ── Complete ────────────────────────────────────── */
+  .complete-layout {
+    display: flex; align-items: center;
+    gap: clamp(2rem,6vw,5rem);
+    padding: 0 clamp(1rem,4vw,3rem);
+    max-width: 780px; width: 100%;
+  }
+  .complete-icon {
+    font-size: clamp(48px,10vw,72px); flex-shrink: 0;
+    animation: pop 0.5s cubic-bezier(.36,.07,.19,.97);
+  }
+  @keyframes pop {
+    0%   { transform: scale(0.4); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .complete-text { flex: 1; }
+  .complete-title {
+    font-size: clamp(18px,3.5vw,26px);
+    font-weight: 700; letter-spacing: -0.4px; margin-bottom: 0.6rem;
+  }
+  .complete-body {
+    font-size: clamp(12px,1.8vw,14px);
+    color: #555; line-height: 1.75; margin-bottom: 1.5rem;
+  }
+
+  /* ── Buttons ─────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 11px 26px;
+    font-size: clamp(13px,1.8vw,15px); font-weight: 500;
+    border-radius: 999px; cursor: pointer; font-family: inherit;
+    transition: background 0.15s, opacity 0.2s, transform 0.1s;
+    border: none; outline: none; min-height: 44px; white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: #5C8F65; color: #fff; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost {
+    background: transparent;
+    border: 1.5px solid #5C8F65;
+    color: #1E4D25;
+  }
+  .btn-ghost:hover { background: #E8F4EA; }
+  .btn-secondary {
+    background: transparent;
+    border: 1.5px solid #ddd; color: #888;
+  }
+  .btn-secondary:hover { background: #f5f5f5; }
+</style>
+</head>
+<body>
+
+<div id="rotate-overlay">
+  <div class="rotate-icon">📱</div>
+  <p>Rotate your device to landscape<br>to use this experience.</p>
+</div>
+
+<div id="app">
+
+  <!-- Intro -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro-layout">
+      <div class="orb"></div>
+      <div class="intro-text">
+        <h1 class="intro-title">Sensory Nature Walk</h1>
+        <p class="intro-body">This one requires going outside — even for five minutes. You're not looking for anything beautiful. You're just arriving in your body.<br><br>Find a door, a window, a courtyard, a patch of grass. Anywhere outside counts.</p>
+        <button class="btn btn-primary" onclick="startWalk()">I'm outside — let's go</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Walk -->
+  <div class="screen" id="screen-walk">
+    <div class="walk-layout">
+      <!-- Left: prompt -->
+      <div class="walk-left">
+        <div class="step-pips" id="step-pips"></div>
+        <div class="sense-eyebrow" id="sense-eyebrow"></div>
+        <div class="step-question" id="step-question"></div>
+        <div class="step-nudge" id="step-nudge"></div>
+        <div class="step-counter" id="step-counter"></div>
+      </div>
+      <!-- Right: notes + nav -->
+      <div class="walk-right">
+        <div class="note-label">What did you notice? <span style="font-weight:400;color:#bbb">(optional)</span></div>
+        <textarea id="note-input" placeholder="A word, a sentence, nothing at all…"></textarea>
+        <div class="nav-row">
+          <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()">← Back</button>
+          <button class="btn btn-primary" id="next-btn" onclick="nextStep()">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete -->
+  <div class="screen" id="screen-complete">
+    <div class="complete-layout">
+      <div class="complete-icon">🌿</div>
+      <div class="complete-text">
+        <h2 class="complete-title">That's regulation.</h2>
+        <p class="complete-body">You just spent time arriving in your body rather than escaping it. That's not a small thing.<br><br>Whenever your glitter feels shaken — come outside. Five minutes is enough.</p>
+        <button class="btn btn-ghost" onclick="resetWalk()">Walk again</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Orientation lock ─────────────────────────────
+(function() {
+  const s = screen.orientation || screen.msOrientation;
+  if (s && s.lock) s.lock('landscape').catch(() => {});
+})();
+
+const STEPS = [
+  { sense: "Ground", question: "What does the surface feel like under your feet?", nudge: "Shift your weight slightly. Feel the texture — hard, soft, uneven, solid." },
+  { sense: "Sight",    question: "What's moving at the very edge of your vision?",     nudge: "Don't chase it. Let your peripheral vision show you what's there — leaves, shadows, light." },
+  { sense: "Sound",   question: "What sounds exist beyond the obvious ones?",          nudge: "The loudest sound is easy. Listen past it. Wind? Birds? Distant traffic? Your own breathing?" },
+  { sense: "Touch",   question: "What is the air doing to your skin right now?",       nudge: "Temperature, movement, moisture. Is it different on your face than your arms?" },
+  { sense: "Smell",   question: "What does the air smell like right now?",             nudge: "Take one slow breath in. Don't name it immediately — just receive it. Then try to describe it." },
+  { sense: "Sight",   question: "Find something small that you hadn't noticed before.", nudge: "A crack in the pavement. A tiny plant growing in the wrong place. A shadow with an interesting shape." },
+  { sense: "Presence", question: "How does your body feel compared to when you walked out here?", nudge: "Not better or worse — just different. Notice what's shifted, even slightly." }
+];
+
+let currentStep = 0;
+const notes = {};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startWalk() {
+  currentStep = 0;
+  renderStep();
+  showScreen('screen-walk');
+}
+
+function renderStep(direction = 1) {
+  const s = STEPS[currentStep];
+
+  // Pips
+  const pipsEl = document.getElementById('step-pips');
+  pipsEl.innerHTML = '';
+  STEPS.forEach((_, i) => {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < currentStep ? ' done' : i === currentStep ? ' current' : '');
+    pipsEl.appendChild(p);
+  });
+
+  // Fade labels
+  ['sense-eyebrow','step-question','step-nudge'].forEach(id => {
+    document.getElementById(id).style.opacity = 0;
+  });
+  setTimeout(() => {
+    document.getElementById('sense-eyebrow').textContent = s.sense;
+    document.getElementById('step-question').textContent  = s.question;
+    document.getElementById('step-nudge').textContent     = s.nudge;
+    document.getElementById('step-counter').textContent   = `${currentStep + 1} of ${STEPS.length}`;
+    ['sense-eyebrow','step-question','step-nudge'].forEach(id => {
+      document.getElementById(id).style.opacity = 1;
+    });
+  }, 150);
+
+  document.getElementById('note-input').value = notes[currentStep] || '';
+  document.getElementById('prev-btn').style.visibility = currentStep > 0 ? 'visible' : 'hidden';
+  document.getElementById('next-btn').textContent = currentStep === STEPS.length - 1 ? 'Finish ✓' : 'Next →';
+}
+
+function nextStep() {
+  notes[currentStep] = document.getElementById('note-input').value;
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderStep(1);
+  } else {
+    showScreen('screen-complete');
+  }
+}
+
+function prevStep() {
+  notes[currentStep] = document.getElementById('note-input').value;
+  if (currentStep > 0) { currentStep--; renderStep(-1); }
+}
+
+function resetWalk() {
+  currentStep = 0;
+  Object.keys(notes).forEach(k => delete notes[k]);
+  showScreen('screen-intro');
+}
+</script>
+</body>
+</html>
