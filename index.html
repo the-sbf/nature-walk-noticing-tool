@@ -6,29 +6,28 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Sensory Nature Walk</title>
+<title>Virtual Nature Walk</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
     --accent: #5C8F65;
-    --accent-light: #E8F4EA;
     --accent-dark: #1E4D25;
-    --transition-dur: 0.4s;
+    --dur: 0.6s;
   }
 
   html, body { width: 100%; height: 100%; overflow: hidden; }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: linear-gradient(145deg, #f2f8f2 0%, #e4f0e5 100%);
+    background: linear-gradient(160deg, #e4f0e5 0%, #d0e8d4 100%);
     color: #1a1a1a;
-    transition: background var(--transition-dur) ease;
+    transition: background 1.2s ease;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
 
-  /* ── Rotate overlay ──────────────────────────────── */
+  /* ── Rotate overlay ─────────────────────────── */
   #rotate-overlay {
     display: none; position: fixed; inset: 0; z-index: 999;
     background: #1a1a1a; color: #fff;
@@ -37,16 +36,29 @@
   }
   .rotate-icon { font-size: 52px; animation: rotate-hint 1.8s ease-in-out infinite; }
   @keyframes rotate-hint {
-    0%, 100% { transform: rotate(0deg); }
-    40%, 60%  { transform: rotate(90deg); }
+    0%,100% { transform: rotate(0deg); }
+    40%,60%  { transform: rotate(90deg); }
   }
   #rotate-overlay p { font-size: 15px; opacity: 0.75; line-height: 1.6; }
   @media (orientation: portrait) { #rotate-overlay { display: flex; } }
 
-  /* ── App ─────────────────────────────────────────── */
-  #app { width: 100%; height: 100%; position: relative; }
+  /* ── Particles ──────────────────────────────── */
+  .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .particle {
+    position: absolute; bottom: -10px; border-radius: 50%;
+    background: rgba(92,143,101,0.18);
+    animation: float-up linear infinite;
+  }
+  @keyframes float-up {
+    0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(-110vh) translateX(var(--drift)) scale(0.4); opacity: 0; }
+  }
 
-  /* ── Screens ─────────────────────────────────────── */
+  /* ── App / Screens ──────────────────────────── */
+  #app { width: 100%; height: 100%; position: relative; z-index: 1; }
+
   .screen {
     width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
@@ -54,184 +66,294 @@
              env(safe-area-inset-bottom,0) env(safe-area-inset-left,16px);
     opacity: 0; pointer-events: none;
     position: absolute; inset: 0;
-    transition: opacity var(--transition-dur) ease;
+    transition: opacity var(--dur) ease;
   }
   .screen.active { opacity: 1; pointer-events: all; position: relative; }
 
-  /* ── Intro ───────────────────────────────────────── */
+  /* ── Intro ──────────────────────────────────── */
   .intro-layout {
     display: flex; align-items: center;
     gap: clamp(2rem,6vw,5rem);
     padding: 0 clamp(1rem,4vw,3rem);
-    max-width: 780px; width: 100%;
+    max-width: 820px; width: 100%;
   }
   .orb {
-    width: clamp(72px,14vw,100px);
-    height: clamp(72px,14vw,100px);
+    width: clamp(80px,14vw,110px); height: clamp(80px,14vw,110px);
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #84B888, #5C8F65);
+    background: radial-gradient(circle at 35% 35%, #a8d5ad, #5C8F65 60%, #3a6b42);
     flex-shrink: 0;
     animation: breathe 4s ease-in-out infinite;
-    box-shadow: 0 0 0 0 rgba(92,143,101,0.4);
+    box-shadow: 0 0 0 0 rgba(92,143,101,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(28px,5vw,42px);
   }
   @keyframes breathe {
-    0%,100% { transform: scale(1);    box-shadow: 0 0 0  0px rgba(92,143,101,0.3); }
-    50%      { transform: scale(1.16); box-shadow: 0 0 0 20px rgba(92,143,101,0); }
+    0%,100% { transform: scale(1);    box-shadow: 0 0 0  0px rgba(92,143,101,0.25); }
+    50%      { transform: scale(1.12); box-shadow: 0 0 0 22px rgba(92,143,101,0); }
   }
   .intro-text { flex: 1; }
+  .intro-eyebrow {
+    font-size: clamp(10px,1.4vw,12px); font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.5rem;
+  }
   .intro-title {
-    font-size: clamp(18px,3.5vw,26px);
-    font-weight: 700; letter-spacing: -0.4px; margin-bottom: 0.6rem;
+    font-size: clamp(20px,4vw,30px); font-weight: 700;
+    letter-spacing: -0.5px; line-height: 1.15; margin-bottom: 0.75rem;
   }
   .intro-body {
     font-size: clamp(12px,1.8vw,14px);
-    color: #555; line-height: 1.75; margin-bottom: 1.5rem;
+    color: #555; line-height: 1.8; margin-bottom: 1.5rem;
+  }
+  .intro-steps {
+    display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem;
+  }
+  .intro-step {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: clamp(11px,1.6vw,13px); color: #555; line-height: 1.5;
+  }
+  .intro-step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
   }
 
-  /* ── Walk screen — two-column ────────────────────── */
+  /* ── Walk — two-column ──────────────────────── */
   .walk-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: grid; grid-template-columns: 1fr 1fr;
     gap: clamp(1.5rem,4vw,3rem);
     padding: clamp(0.75rem,2vh,1.5rem) clamp(1rem,4vw,3rem);
-    max-width: 900px; width: 100%; height: 100%;
+    max-width: 960px; width: 100%; height: 100%;
     align-items: stretch;
   }
 
-  /* Left: step info */
+  /* Left: scene + prompt */
   .walk-left {
-    display: flex; flex-direction: column;
-    justify-content: center;
-    padding-top: clamp(0.5rem,2vh,1.5rem);
-    padding-bottom: clamp(0.5rem,2vh,1.5rem);
+    display: flex; flex-direction: column; justify-content: center;
+    padding: clamp(0.5rem,2vh,1.5rem) 0;
   }
-  .step-pips {
-    display: flex; gap: 5px; margin-bottom: clamp(1rem,2.5vh,1.75rem);
-  }
+  .step-pips { display: flex; gap: 5px; margin-bottom: clamp(1rem,2.5vh,1.75rem); }
   .pip {
-    height: 4px; border-radius: 999px;
-    background: rgba(0,0,0,0.1);
-    transition: background 0.3s, flex 0.3s;
-    flex: 1; max-width: 32px;
+    height: 4px; border-radius: 999px; background: rgba(0,0,0,0.1);
+    transition: background 0.4s, flex 0.4s; flex: 1; max-width: 32px;
   }
-  .pip.done    { background: #5C8F65; }
-  .pip.current { background: #5C8F65; flex: 2.5; max-width: 60px; }
+  .pip.done    { background: var(--accent); }
+  .pip.current { background: var(--accent); flex: 2.5; max-width: 60px; }
+
+  .scene-visual { display: flex; align-items: center; gap: 14px; margin-bottom: clamp(0.75rem,2vh,1.25rem); transition: opacity 0.3s; }
+  .scene-icon   { font-size: clamp(32px,5.5vw,48px); line-height: 1; animation: gentle-sway 6s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes gentle-sway {
+    0%,100% { transform: rotate(-2deg) scale(1); }
+    50%      { transform: rotate(2deg) scale(1.04); }
+  }
+  .scene-text   { font-size: clamp(11px,1.6vw,13px); color: #666; line-height: 1.6; font-style: italic; }
 
   .sense-eyebrow {
-    font-size: clamp(10px,1.4vw,12px);
-    font-weight: 600; letter-spacing: 0.12em;
-    text-transform: uppercase; color: #5C8F65;
-    margin-bottom: clamp(0.5rem,1.5vh,0.75rem);
-    min-height: 1.2em;
-    transition: opacity 0.25s;
+    font-size: clamp(10px,1.4vw,12px); font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+    margin-bottom: clamp(0.4rem,1.2vh,0.65rem); min-height: 1.2em; transition: opacity 0.25s;
   }
   .step-question {
-    font-size: clamp(16px,3vw,24px);
-    font-weight: 700; line-height: 1.3;
+    font-size: clamp(16px,3vw,24px); font-weight: 700; line-height: 1.3;
     letter-spacing: -0.3px; color: #1a1a1a;
-    margin-bottom: clamp(0.75rem,2vh,1.25rem);
-    min-height: 2.6em;
-    transition: opacity 0.25s;
+    margin-bottom: clamp(0.6rem,1.8vh,1rem); min-height: 2.6em; transition: opacity 0.25s;
   }
-  .step-nudge {
-    font-size: clamp(11px,1.6vw,13px);
-    color: #666; line-height: 1.65; font-style: italic;
-    transition: opacity 0.25s;
-  }
-  .step-counter {
-    font-size: 12px; color: #aaa;
-    margin-top: clamp(0.75rem,2vh,1.25rem);
+  .step-nudge   { font-size: clamp(11px,1.6vw,13px); color: #777; line-height: 1.65; font-style: italic; transition: opacity 0.25s; }
+  .step-counter { font-size: 11px; color: #aaa; margin-top: clamp(0.75rem,2vh,1.25rem); }
+
+  /* Right: eyes-close / timer / write panel */
+  .walk-right {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: clamp(0.5rem,2vh,1.5rem) 0; gap: 0;
   }
 
-  /* Right: notes + nav */
-  .walk-right {
+  /* State: idle — close eyes CTA */
+  .panel-idle {
     display: flex; flex-direction: column;
-    justify-content: space-between;
-    padding-top: clamp(0.5rem,2vh,1.5rem);
-    padding-bottom: clamp(0.5rem,2vh,1.5rem);
+    align-items: center; justify-content: center;
+    height: 100%; gap: clamp(0.75rem,2vh,1.25rem);
+    text-align: center;
   }
-  .note-label {
-    font-size: clamp(10px,1.4vw,12px);
-    font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: #888;
-    margin-bottom: 8px;
+  .eyes-instruction {
+    font-size: clamp(11px,1.6vw,13px); color: #888; line-height: 1.6; max-width: 220px;
   }
+
+  /* State: timing — countdown */
+  .panel-timing {
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%; gap: clamp(0.75rem,2vh,1rem);
+    text-align: center;
+  }
+  .timer-wrap { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+  .timer-wrap svg { width: 90px; height: 90px; }
+  .timer-num {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-label { font-size: clamp(12px,1.7vw,14px); color: #666; line-height: 1.5; }
+  .skip-link {
+    font-size: 12px; color: #bbb; background: none; border: none;
+    cursor: pointer; font-family: inherit; padding: 4px 8px;
+    transition: color 0.15s;
+  }
+  .skip-link:hover { color: #888; }
+
+  /* State: write — textarea */
+  .panel-write {
+    display: none; flex-direction: column;
+    height: 100%; gap: 0;
+  }
+  .write-label {
+    font-size: clamp(10px,1.4vw,12px); font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .write-hint {
+    font-size: 11px; color: #a07840; margin-top: 5px; min-height: 16px;
+    opacity: 1; transition: opacity 0.3s;
+  }
+  .write-hint.hidden { opacity: 0; pointer-events: none; }
+  .btn:disabled { opacity: 0.38; cursor: not-allowed; }
   textarea {
-    flex: 1;
-    width: 100%;
-    font-size: clamp(12px,1.7vw,14px);
-    font-family: inherit;
-    color: #1a1a1a;
-    background: rgba(255,255,255,0.75);
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 12px;
-    padding: 12px 14px;
-    resize: none;
-    outline: none;
-    line-height: 1.65;
-    transition: border-color 0.15s, background 0.15s;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    flex: 1; width: 100%; font-size: 16px;
+    font-family: inherit; color: #1a1a1a;
+    background: rgba(255,255,255,0.65);
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 14px; padding: 14px 16px;
+    resize: none; outline: none; line-height: 1.7;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     min-height: 0;
   }
-  textarea:focus { border-color: #5C8F65; background: rgba(255,255,255,0.95); }
-  textarea::placeholder { color: #bbb; }
-
+  textarea:focus {
+    border-color: var(--accent); background: rgba(255,255,255,0.9);
+    box-shadow: 0 0 0 3px rgba(92,143,101,0.12);
+  }
+  textarea::placeholder { color: #c0c0c0; }
   .nav-row {
-    display: flex; align-items: center;
-    justify-content: flex-end; gap: 8px;
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
     margin-top: clamp(0.6rem,1.5vh,1rem);
   }
 
-  /* ── Complete ────────────────────────────────────── */
+  /* ── Complete ────────────────────────────────── */
   .complete-layout {
-    display: flex; align-items: center;
-    gap: clamp(2rem,6vw,5rem);
-    padding: 0 clamp(1rem,4vw,3rem);
-    max-width: 780px; width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(1.5rem,4vw,3rem);
+    padding: clamp(0.75rem,2vh,1.5rem) clamp(1rem,4vw,3rem);
+    max-width: 960px; width: 100%; height: 100%;
+    align-items: stretch;
+  }
+  .complete-left {
+    display: flex; flex-direction: column; justify-content: center; gap: 0.75rem;
   }
   .complete-icon {
-    font-size: clamp(48px,10vw,72px); flex-shrink: 0;
-    animation: pop 0.5s cubic-bezier(.36,.07,.19,.97);
+    font-size: clamp(40px,8vw,64px); line-height: 1;
+    animation: pop 0.6s cubic-bezier(.36,.07,.19,.97) both;
   }
   @keyframes pop {
-    0%   { transform: scale(0.4); opacity: 0; }
-    70%  { transform: scale(1.15); }
+    0%   { transform: scale(0.3); opacity: 0; }
+    70%  { transform: scale(1.12); }
     100% { transform: scale(1); opacity: 1; }
   }
-  .complete-text { flex: 1; }
+  .complete-eyebrow {
+    font-size: clamp(10px,1.4vw,12px); font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+  }
   .complete-title {
-    font-size: clamp(18px,3.5vw,26px);
-    font-weight: 700; letter-spacing: -0.4px; margin-bottom: 0.6rem;
+    font-size: clamp(18px,3.5vw,28px); font-weight: 700;
+    letter-spacing: -0.4px; line-height: 1.2;
   }
   .complete-body {
-    font-size: clamp(12px,1.8vw,14px);
-    color: #555; line-height: 1.75; margin-bottom: 1.5rem;
+    font-size: clamp(12px,1.8vw,14px); color: #555; line-height: 1.8;
+  }
+  .outside-card {
+    background: rgba(255,255,255,0.6); border-radius: 12px;
+    padding: 12px 16px; border-left: 3px solid var(--accent);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .outside-card p {
+    font-size: clamp(11px,1.6vw,13px); color: #444; line-height: 1.65;
   }
 
-  /* ── Buttons ─────────────────────────────────────── */
+  .complete-right {
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 8px; padding: clamp(0.5rem,2vh,1.5rem) 0; overflow-y: auto;
+  }
+  .reflection-label {
+    font-size: clamp(10px,1.4vw,12px); font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #999; margin-bottom: 4px;
+  }
+  .reflection-item {
+    background: rgba(255,255,255,0.6); border-radius: 10px;
+    padding: 10px 14px; border-left: 3px solid var(--accent);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    animation: slide-in 0.4s ease both;
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .ri-sense { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px; }
+  .ri-note  { font-size: clamp(11px,1.5vw,13px); color: #333; line-height: 1.55; }
+
+  /* ── Buttons ─────────────────────────────────── */
   .btn {
     display: inline-flex; align-items: center; justify-content: center;
-    padding: 11px 26px;
-    font-size: clamp(13px,1.8vw,15px); font-weight: 500;
+    padding: 11px 26px; font-size: clamp(13px,1.8vw,15px); font-weight: 500;
     border-radius: 999px; cursor: pointer; font-family: inherit;
-    transition: background 0.15s, opacity 0.2s, transform 0.1s;
+    transition: background 0.15s, filter 0.15s, transform 0.1s;
     border: none; outline: none; min-height: 44px; white-space: nowrap;
   }
   .btn:active { transform: scale(0.96); }
-  .btn-primary { background: #5C8F65; color: #fff; }
-  .btn-primary:hover { filter: brightness(1.08); }
-  .btn-ghost {
-    background: transparent;
-    border: 1.5px solid #5C8F65;
-    color: #1E4D25;
+  .btn-primary  { background: var(--accent); color: #fff; }
+  .btn-primary:hover  { filter: brightness(1.08); }
+  .btn-ghost    { background: transparent; border: 1.5px solid var(--accent); color: var(--accent-dark); }
+  .btn-ghost:hover    { background: rgba(92,143,101,0.1); }
+  .btn-secondary { background: transparent; border: 1.5px solid #ddd; color: #999; }
+  .btn-secondary:hover { background: rgba(0,0,0,0.04); }
+
+  /* ── Compact landscape ──────────────────────── */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .intro-layout { gap: clamp(1rem,3vw,2rem); padding: 0 clamp(0.75rem,3vw,2rem); }
+    .orb { width: 60px; height: 60px; font-size: 24px; }
+    .intro-title { font-size: 18px; margin-bottom: 0.4rem; }
+    .intro-body { font-size: 12px; line-height: 1.6; margin-bottom: 0.75rem; }
+    .intro-steps { gap: 4px; margin-bottom: 0.75rem; }
+    .intro-step { font-size: 11px; }
+
+    .walk-layout { gap: clamp(1rem,3vw,2rem); padding: 8px clamp(0.75rem,3vw,2rem); }
+    .walk-left, .walk-right { padding: 6px 0; }
+    .step-pips { margin-bottom: 8px; }
+    .scene-visual { margin-bottom: 8px; }
+    .scene-icon { font-size: 22px; }
+    .scene-text { font-size: 11px; }
+    .sense-eyebrow { font-size: 10px; margin-bottom: 4px; }
+    .step-question { font-size: 15px; margin-bottom: 6px; min-height: 0; }
+    .step-nudge { font-size: 11px; }
+    .step-counter { margin-top: 6px; font-size: 10px; }
+
+    .timer-wrap { width: 68px; height: 68px; }
+    .timer-wrap svg { width: 68px; height: 68px; }
+    .timer-num { font-size: 22px; }
+    .timer-label { font-size: 11px; }
+    .eyes-instruction { font-size: 11px; }
+    .write-label { font-size: 10px; }
+    .nav-row { margin-top: 6px; }
+    .btn { padding: 9px 20px; font-size: 13px; }
+
+    .complete-layout { gap: clamp(1rem,3vw,2rem); padding: 8px clamp(0.75rem,3vw,2rem); }
+    .complete-icon { font-size: 36px; }
+    .complete-title { font-size: 18px; }
+    .complete-body { font-size: 12px; line-height: 1.6; }
+    .outside-card p { font-size: 11px; }
+    .reflection-item { padding: 7px 11px; }
+    .ri-note { font-size: 11px; }
   }
-  .btn-ghost:hover { background: #E8F4EA; }
-  .btn-secondary {
-    background: transparent;
-    border: 1.5px solid #ddd; color: #888;
-  }
-  .btn-secondary:hover { background: #f5f5f5; }
 </style>
 </head>
 <body>
@@ -241,51 +363,104 @@
   <p>Rotate your device to landscape<br>to use this experience.</p>
 </div>
 
+<div class="particles" id="particles"></div>
+
 <div id="app">
 
-  <!-- Intro -->
+  <!-- ── Intro ── -->
   <div class="screen active" id="screen-intro">
     <div class="intro-layout">
-      <div class="orb"></div>
+      <div class="orb">🌿</div>
       <div class="intro-text">
-        <h1 class="intro-title">Sensory Nature Walk</h1>
-        <p class="intro-body">This one requires going outside — even for five minutes. You're not looking for anything beautiful. You're just arriving in your body.<br><br>Find a door, a window, a courtyard, a patch of grass. Anywhere outside counts.</p>
-        <button class="btn btn-primary" onclick="startWalk()">I'm outside — let's go</button>
+        <p class="intro-eyebrow">Guided visualisation + real practice</p>
+        <h1 class="intro-title">The Virtual Nature Walk</h1>
+        <p class="intro-body">First, you'll walk through a forest in your imagination. Then, you'll take the same walk outside — for real.</p>
+        <div class="intro-steps">
+          <div class="intro-step"><div class="intro-step-num">1</div><span>Read each prompt. Then close your eyes for 25 seconds.</span></div>
+          <div class="intro-step"><div class="intro-step-num">2</div><span>Notice what your imagination shows you. Write it down.</span></div>
+          <div class="intro-step"><div class="intro-step-num">3</div><span>Afterwards — go outside and walk through all seven moments for real.</span></div>
+        </div>
+        <button class="btn btn-primary" onclick="startWalk()">Begin →</button>
       </div>
     </div>
   </div>
 
-  <!-- Walk -->
+  <!-- ── Walk ── -->
   <div class="screen" id="screen-walk">
     <div class="walk-layout">
-      <!-- Left: prompt -->
+
+      <!-- Left: scene + prompt -->
       <div class="walk-left">
         <div class="step-pips" id="step-pips"></div>
-        <div class="sense-eyebrow" id="sense-eyebrow"></div>
-        <div class="step-question" id="step-question"></div>
-        <div class="step-nudge" id="step-nudge"></div>
-        <div class="step-counter" id="step-counter"></div>
-      </div>
-      <!-- Right: notes + nav -->
-      <div class="walk-right">
-        <div class="note-label">What did you notice? <span style="font-weight:400;color:#bbb">(optional)</span></div>
-        <textarea id="note-input" placeholder="A word, a sentence, nothing at all…"></textarea>
-        <div class="nav-row">
-          <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()">← Back</button>
-          <button class="btn btn-primary" id="next-btn" onclick="nextStep()">Next →</button>
+        <div class="scene-visual">
+          <div class="scene-icon" id="scene-icon"></div>
+          <div class="scene-text" id="scene-text"></div>
         </div>
+        <div class="sense-eyebrow" id="sense-eyebrow"></div>
+        <div class="step-question"  id="step-question"></div>
+        <div class="step-nudge"     id="step-nudge"></div>
+        <div class="step-counter"   id="step-counter"></div>
+      </div>
+
+      <!-- Right: idle / timing / write -->
+      <div class="walk-right" id="walk-right">
+
+        <!-- Idle: close eyes CTA -->
+        <div class="panel-idle" id="panel-idle">
+          <p class="eyes-instruction">Read the prompt. When you're ready, close your eyes.</p>
+          <button class="btn btn-primary" onclick="startTimer()">Close your eyes →</button>
+        </div>
+
+        <!-- Timing: 25-second countdown -->
+        <div class="panel-timing" id="panel-timing">
+          <div class="timer-wrap">
+            <svg viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(92,143,101,0.15)" stroke-width="5"/>
+              <circle id="timer-ring" cx="45" cy="45" r="38" fill="none"
+                stroke="#5C8F65" stroke-width="5" stroke-linecap="round"
+                stroke-dasharray="238.76"
+                stroke-dashoffset="0"
+                transform="rotate(-90 45 45)"
+                style="transition: stroke-dashoffset 1s linear;"/>
+            </svg>
+            <div class="timer-num" id="timer-num">25</div>
+          </div>
+          <p class="timer-label">Eyes closed.<br>Notice what appears.</p>
+          <button class="skip-link" onclick="skipTimer()">Skip →</button>
+        </div>
+
+        <!-- Write: what did you see -->
+        <div class="panel-write" id="panel-write">
+          <div class="write-label">What did you see?</div>
+          <textarea id="note-input" placeholder="An image, a colour, a feeling — anything that came up…" oninput="onNoteInput()"></textarea>
+          <p class="write-hint" id="write-hint">Write something first — even just one word.</p>
+          <div class="nav-row">
+            <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()">← Back</button>
+            <button class="btn btn-primary"   id="next-btn" onclick="nextStep()" disabled>Next →</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Complete -->
+  <!-- ── Complete ── -->
   <div class="screen" id="screen-complete">
     <div class="complete-layout">
-      <div class="complete-icon">🌿</div>
-      <div class="complete-text">
-        <h2 class="complete-title">That's regulation.</h2>
-        <p class="complete-body">You just spent time arriving in your body rather than escaping it. That's not a small thing.<br><br>Whenever your glitter feels shaken — come outside. Five minutes is enough.</p>
-        <button class="btn btn-ghost" onclick="resetWalk()">Walk again</button>
+      <div class="complete-left">
+        <div class="complete-icon">🌾</div>
+        <p class="complete-eyebrow">Virtual walk complete</p>
+        <h2 class="complete-title">Now take it outside.</h2>
+        <p class="complete-body">You've walked the path in your mind. Your nervous system already responded to it — that's real.<br><br>Now find a door and do it for real. Same seven moments. No timer this time.</p>
+        <div class="outside-card">
+          <p>🌲 &nbsp;Ground &nbsp;·&nbsp; 🍂 Canopy &nbsp;·&nbsp; 🎋 Sound &nbsp;·&nbsp; 🌸 Air &nbsp;·&nbsp; ☀️ Light &nbsp;·&nbsp; 🌾 Here</p>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="resetWalk()">Walk again</button>
+        </div>
+      </div>
+      <div class="complete-right" id="reflection-list">
+        <p class="reflection-label">What you saw</p>
       </div>
     </div>
   </div>
@@ -293,28 +468,106 @@
 </div>
 
 <script>
-// ── Orientation lock ─────────────────────────────
+// ── Orientation lock ───────────────────────────────────
 (function() {
   const s = screen.orientation || screen.msOrientation;
   if (s && s.lock) s.lock('landscape').catch(() => {});
 })();
 
+// ── Particles ──────────────────────────────────────────
+(function() {
+  const wrap = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 3 + Math.random() * 5;
+    p.style.cssText = `
+      width:${size}px;height:${size}px;
+      left:${Math.random()*100}%;
+      animation-duration:${12+Math.random()*16}s;
+      animation-delay:-${Math.random()*18}s;
+      --drift:${(Math.random()-0.5)*120}px;
+      opacity:0;
+    `;
+    wrap.appendChild(p);
+  }
+})();
+
+// ── Steps ──────────────────────────────────────────────
 const STEPS = [
-  { sense: "Ground", question: "What does the surface feel like under your feet?", nudge: "Shift your weight slightly. Feel the texture — hard, soft, uneven, solid." },
-  { sense: "Sight",    question: "What's moving at the very edge of your vision?",     nudge: "Don't chase it. Let your peripheral vision show you what's there — leaves, shadows, light." },
-  { sense: "Sound",   question: "What sounds exist beyond the obvious ones?",          nudge: "The loudest sound is easy. Listen past it. Wind? Birds? Distant traffic? Your own breathing?" },
-  { sense: "Touch",   question: "What is the air doing to your skin right now?",       nudge: "Temperature, movement, moisture. Is it different on your face than your arms?" },
-  { sense: "Smell",   question: "What does the air smell like right now?",             nudge: "Take one slow breath in. Don't name it immediately — just receive it. Then try to describe it." },
-  { sense: "Sight",   question: "Find something small that you hadn't noticed before.", nudge: "A crack in the pavement. A tiny plant growing in the wrong place. A shadow with an interesting shape." },
-  { sense: "Presence", question: "How does your body feel compared to when you walked out here?", nudge: "Not better or worse — just different. Notice what's shifted, even slightly." }
+  {
+    sense: "Arriving", icon: "🌲",
+    scene: "You're standing at the edge of a forest path. The world behind you fades.",
+    question: "Take a slow breath in. Where do you feel it first?",
+    nudge: "Chest, throat, belly — just notice where the air lands.",
+    bgA: "#e4f0e5", bgB: "#cce0d0"
+  },
+  {
+    sense: "Ground", icon: "🍂",
+    scene: "The path beneath you is soft — damp earth and fallen leaves layered deep.",
+    question: "Feel the weight of your body. What's holding you up?",
+    nudge: "Your chair, the floor, the ground beneath it. Let yourself feel that support.",
+    bgA: "#f0ece0", bgB: "#e4d8c4"
+  },
+  {
+    sense: "Canopy", icon: "🌿",
+    scene: "Branches cross above you. Light breaks through in slow, shifting patterns.",
+    question: "Look up — or imagine it. What does the light look like where it lands?",
+    nudge: "Dappled or soft? Moving or still? Let your mind settle on it.",
+    bgA: "#d8edf0", bgB: "#c4e0d4"
+  },
+  {
+    sense: "Sound", icon: "🎋",
+    scene: "Somewhere nearby, water is moving. Leaves shift in a breeze you can't quite feel yet.",
+    question: "What's the quietest sound you can hear right now?",
+    nudge: "Not the obvious ones — listen past them. Your breath. Something distant.",
+    bgA: "#e0ecf4", bgB: "#c8e0e8"
+  },
+  {
+    sense: "Air", icon: "🌸",
+    scene: "A small clearing opens. The air is cooler here, carrying something green and soft.",
+    question: "One slow breath. What does the air feel like moving through you?",
+    nudge: "Warm or cool? Dry or heavy? Don't name it yet — just receive it.",
+    bgA: "#ede8f5", bgB: "#d8e8dc"
+  },
+  {
+    sense: "Light", icon: "☀️",
+    scene: "A shaft of sunlight breaks through the canopy. It lands on the path just ahead.",
+    question: "Where in your body do you feel warmth right now?",
+    nudge: "Real or imagined — warmth is warmth. Hands? Face? Chest? Follow it.",
+    bgA: "#f8f0d4", bgB: "#f0e4b8"
+  },
+  {
+    sense: "Here", icon: "🌾",
+    scene: "You've walked the whole path. The forest is quiet. It holds you a moment longer.",
+    question: "How does your body feel now compared to when you began?",
+    nudge: "Not better or worse — just different. Notice what shifted.",
+    bgA: "#f0e8d8", bgB: "#e4dac4"
+  }
 ];
 
 let currentStep = 0;
 const notes = {};
+let timerInterval = null;
+let timerLeft = 25;
+const TIMER_TOTAL = 25;
+const CIRCUMFERENCE = 2 * Math.PI * 38; // 238.76
+
+function setBackground(idx) {
+  const s = STEPS[idx];
+  document.body.style.background =
+    `linear-gradient(160deg, ${s.bgA} 0%, ${s.bgB} 100%)`;
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+
+function showPanel(name) {
+  document.getElementById('panel-idle').style.display   = name === 'idle'   ? 'flex' : 'none';
+  document.getElementById('panel-timing').style.display = name === 'timing' ? 'flex' : 'none';
+  document.getElementById('panel-write').style.display  = name === 'write'  ? 'flex' : 'none';
 }
 
 function startWalk() {
@@ -323,8 +576,10 @@ function startWalk() {
   showScreen('screen-walk');
 }
 
-function renderStep(direction = 1) {
+function renderStep() {
   const s = STEPS[currentStep];
+  setBackground(currentStep);
+  clearTimer();
 
   // Pips
   const pipsEl = document.getElementById('step-pips');
@@ -335,43 +590,131 @@ function renderStep(direction = 1) {
     pipsEl.appendChild(p);
   });
 
-  // Fade labels
-  ['sense-eyebrow','step-question','step-nudge'].forEach(id => {
-    document.getElementById(id).style.opacity = 0;
+  // Fade content
+  ['scene-icon','scene-text','sense-eyebrow','step-question','step-nudge'].forEach(id => {
+    document.getElementById(id).style.opacity = '0';
   });
   setTimeout(() => {
+    document.getElementById('scene-icon').textContent    = s.icon;
+    document.getElementById('scene-text').textContent    = s.scene;
     document.getElementById('sense-eyebrow').textContent = s.sense;
-    document.getElementById('step-question').textContent  = s.question;
-    document.getElementById('step-nudge').textContent     = s.nudge;
-    document.getElementById('step-counter').textContent   = `${currentStep + 1} of ${STEPS.length}`;
-    ['sense-eyebrow','step-question','step-nudge'].forEach(id => {
-      document.getElementById(id).style.opacity = 1;
+    document.getElementById('step-question').textContent = s.question;
+    document.getElementById('step-nudge').textContent    = s.nudge;
+    document.getElementById('step-counter').textContent  = `${currentStep + 1} of ${STEPS.length}`;
+    ['scene-icon','scene-text','sense-eyebrow','step-question','step-nudge'].forEach(id => {
+      document.getElementById(id).style.opacity = '1';
     });
-  }, 150);
+  }, 180);
 
+  // Note area
   document.getElementById('note-input').value = notes[currentStep] || '';
   document.getElementById('prev-btn').style.visibility = currentStep > 0 ? 'visible' : 'hidden';
-  document.getElementById('next-btn').textContent = currentStep === STEPS.length - 1 ? 'Finish ✓' : 'Next →';
+  document.getElementById('next-btn').textContent =
+    currentStep === STEPS.length - 1 ? 'Finish ✓' : 'Next →';
+
+  // If already has a note (revisiting), go straight to write
+  if (notes[currentStep] !== undefined) {
+    showPanel('write');
+    updateNextBtn();
+  } else {
+    showPanel('idle');
+  }
+}
+
+function startTimer() {
+  timerLeft = TIMER_TOTAL;
+  updateTimerDisplay();
+  showPanel('timing');
+
+  timerInterval = setInterval(() => {
+    timerLeft--;
+    updateTimerDisplay();
+    if (timerLeft <= 0) {
+      clearTimer();
+      openWrite();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timer-num').textContent = timerLeft;
+  const pct = timerLeft / TIMER_TOTAL;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  document.getElementById('timer-ring').style.strokeDashoffset = offset;
+}
+
+function clearTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function skipTimer() {
+  clearTimer();
+  openWrite();
+}
+
+function openWrite() {
+  showPanel('write');
+  updateNextBtn();
+  setTimeout(() => document.getElementById('note-input').focus(), 50);
+}
+
+function onNoteInput() {
+  updateNextBtn();
+}
+
+function updateNextBtn() {
+  const hasText = document.getElementById('note-input').value.trim().length > 0;
+  document.getElementById('next-btn').disabled = !hasText;
+  document.getElementById('write-hint').classList.toggle('hidden', hasText);
 }
 
 function nextStep() {
-  notes[currentStep] = document.getElementById('note-input').value;
+  notes[currentStep] = document.getElementById('note-input').value.trim();
   if (currentStep < STEPS.length - 1) {
     currentStep++;
-    renderStep(1);
+    renderStep();
   } else {
-    showScreen('screen-complete');
+    showComplete();
   }
 }
 
 function prevStep() {
-  notes[currentStep] = document.getElementById('note-input').value;
-  if (currentStep > 0) { currentStep--; renderStep(-1); }
+  notes[currentStep] = document.getElementById('note-input').value.trim();
+  if (currentStep > 0) { currentStep--; renderStep(); }
+}
+
+function showComplete() {
+  clearTimer();
+  document.body.style.background = 'linear-gradient(160deg, #f0e8d8 0%, #e4dac4 100%)';
+
+  const list = document.getElementById('reflection-list');
+  list.innerHTML = '<p class="reflection-label">What you saw</p>';
+
+  const hasAny = STEPS.some((_, i) => notes[i]);
+  if (!hasAny) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'font-size:13px;color:#bbb;font-style:italic;margin-top:8px';
+    empty.textContent = 'You walked in silence. That counts too.';
+    list.appendChild(empty);
+  } else {
+    STEPS.forEach((s, i) => {
+      if (!notes[i]) return;
+      const item = document.createElement('div');
+      item.className = 'reflection-item';
+      item.style.animationDelay = `${i * 0.08}s`;
+      item.innerHTML = `<div class="ri-sense">${s.sense}</div><div class="ri-note">${notes[i]}</div>`;
+      list.appendChild(item);
+    });
+  }
+
+  showScreen('screen-complete');
 }
 
 function resetWalk() {
   currentStep = 0;
   Object.keys(notes).forEach(k => delete notes[k]);
+  clearTimer();
+  document.body.style.background = 'linear-gradient(160deg, #e4f0e5 0%, #d0e8d4 100%)';
   showScreen('screen-intro');
 }
 </script>
